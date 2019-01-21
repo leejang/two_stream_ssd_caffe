@@ -25,6 +25,14 @@ void BaseDataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   } else {
     output_labels_ = true;
   }
+  if(top.size()==4)
+  {
+    output_flows_ = true;
+  }
+  else
+  {
+    output_flows_ = false;
+  }
   data_transformer_.reset(
       new DataTransformer<Dtype>(transform_param_, this->phase_));
   data_transformer_->InitRand();
@@ -44,14 +52,23 @@ BasePrefetchingDataLayer<Dtype>::BasePrefetchingDataLayer(
 
 template <typename Dtype>
 void BasePrefetchingDataLayer<Dtype>::LayerSetUp(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) 
+{
   BaseDataLayer<Dtype>::LayerSetUp(bottom, top);
   // Before starting the prefetch thread, we make cpu_data and gpu_data
   // calls so that the prefetch thread does not accidentally make simultaneous
   // cudaMalloc calls when the main thread is running. In some GPUs this
   // seems to cause failures if we do not so.
-  for (int i = 0; i < PREFETCH_COUNT; ++i) {
+  for (int i = 0; i < PREFETCH_COUNT; ++i) 
+  {
     prefetch_[i].data_.mutable_cpu_data();
+     //   LOG(INFO)<<top.size()<<"1111111111";
+
+    if(this->output_flows_)
+    {
+      prefetch_[i].flowx_.mutable_cpu_data();
+      prefetch_[i].flowy_.mutable_cpu_data();
+    }
     if (this->output_labels_) {
       prefetch_[i].label_.mutable_cpu_data();
     }
@@ -60,6 +77,12 @@ void BasePrefetchingDataLayer<Dtype>::LayerSetUp(
   if (Caffe::mode() == Caffe::GPU) {
     for (int i = 0; i < PREFETCH_COUNT; ++i) {
       prefetch_[i].data_.mutable_gpu_data();
+
+      if(this->output_flows_)
+      {
+        prefetch_[i].flowx_.mutable_gpu_data();
+        prefetch_[i].flowy_.mutable_gpu_data();
+      }
       if (this->output_labels_) {
         prefetch_[i].label_.mutable_gpu_data();
       }
@@ -83,13 +106,23 @@ void BasePrefetchingDataLayer<Dtype>::InternalThreadEntry() {
 
   try {
     while (!must_stop()) {
+    
       Batch<Dtype>* batch = prefetch_free_.pop();
       load_batch(batch);
 #ifndef CPU_ONLY
+
       if (Caffe::mode() == Caffe::GPU) {
         batch->data_.data().get()->async_gpu_push(stream);
+        
+        if(this->output_flows_){
+          batch->flowx_.data().get()->async_gpu_push(stream);
+          batch->flowy_.data().get()->async_gpu_push(stream);
+        }
+
         CUDA_CHECK(cudaStreamSynchronize(stream));
       }
+      //        LOG(INFO)<<"6666";
+
 #endif
       prefetch_full_.push(batch);
     }
@@ -112,6 +145,19 @@ void BasePrefetchingDataLayer<Dtype>::Forward_cpu(
   // Copy the data
   caffe_copy(batch->data_.count(), batch->data_.cpu_data(),
              top[0]->mutable_cpu_data());
+             
+             
+  if(this->output_flows_)
+  {
+    top[2]->ReshapeLike(batch->flowx_);
+    top[3]->ReshapeLike(batch->flowy_);
+    
+    caffe_copy(batch->flowx_.count(), batch->flowx_.cpu_data(),
+             top[2]->mutable_cpu_data());
+    caffe_copy(batch->flowy_.count(), batch->flowy_.cpu_data(),
+             top[3]->mutable_cpu_data());
+  }
+
   DLOG(INFO) << "Prefetch copied";
   if (this->output_labels_) {
     // Reshape to loaded labels.

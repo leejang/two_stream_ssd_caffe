@@ -43,12 +43,14 @@ class BaseDataLayer : public Layer<Dtype> {
   TransformationParameter transform_param_;
   shared_ptr<DataTransformer<Dtype> > data_transformer_;
   bool output_labels_;
+  bool output_flows_;
+
 };
 
 template <typename Dtype>
 class Batch {
  public:
-  Blob<Dtype> data_, label_;
+  Blob<Dtype> data_, label_, flowx_, flowy_;
 };
 
 template <typename Dtype>
@@ -79,6 +81,9 @@ class BasePrefetchingDataLayer :
   BlockingQueue<Batch<Dtype>*> prefetch_full_;
 
   Blob<Dtype> transformed_data_;
+  Blob<Dtype> transformed_flowx_;
+  Blob<Dtype> transformed_flowy_;
+
 };
 
 }  // namespace caffe

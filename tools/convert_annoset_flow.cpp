@@ -34,6 +34,8 @@
 using namespace caffe;  // NOLINT(build/namespaces)
 using std::pair;
 using boost::scoped_ptr;
+using std::cout;
+using std::endl;
 
 DEFINE_bool(gray, false,
     "When this option is on, treat images as grayscale ones");
@@ -61,6 +63,15 @@ DEFINE_bool(encoded, false,
     "When this option is on, the encoded image will be save in datum");
 DEFINE_string(encode_type, "",
     "Optional: What type should we encode the image as ('png','jpg',...).");
+
+bool replace(std::string& str, const std::string& from, const std::string& to) {
+    size_t start_pos = str.find(from);
+    if(start_pos == std::string::npos)
+        return false;
+    str.replace(start_pos, from.length(), to);
+    return true;
+}
+
 
 int main(int argc, char** argv) {
 #ifdef USE_OPENCV
@@ -141,7 +152,7 @@ int main(int argc, char** argv) {
   int count = 0;
   int data_size = 0;
   bool data_size_initialized = false;
-
+  
   for (int line_id = 0; line_id < lines.size(); ++line_id) {
     bool status = true;
     std::string enc = encode_type;
@@ -154,6 +165,7 @@ int main(int argc, char** argv) {
       enc = fn.substr(p);
       std::transform(enc.begin(), enc.end(), enc.begin(), ::tolower);
     }
+
     filename = root_folder + lines[line_id].first;
     if (anno_type == "classification") {
       label = boost::get<int>(lines[line_id].second);
@@ -161,7 +173,24 @@ int main(int argc, char** argv) {
           min_dim, max_dim, is_color, enc, datum);
     } else if (anno_type == "detection") {
       labelname = root_folder + boost::get<std::string>(lines[line_id].second);
+      /*
       status = ReadRichImageToAnnotatedDatum(filename, labelname, resize_height,
+          resize_width, min_dim, max_dim, is_color, enc, type, label_type,
+          name_to_label, &anno_datum);
+      */
+
+      string flow_x = filename;
+      //replace(flow_x, "JPEGImages/","Flow/flow_x_0"); // for egohands dataset, adl dataset
+      replace(flow_x, "JPEGImages/","JPEGImages/flow_x_");
+      string flow_y = filename;
+      replace(flow_y, "JPEGImages/","JPEGImages/flow_y_");
+      //replace(flow_y, "frame","flow_y"); // for egohands dataset, adl dataset
+      
+      LOG(INFO)<<filename;
+      LOG(INFO)<<flow_x;
+      LOG(INFO)<<flow_y;
+      
+      status = ReadRichImageFlowToAnnotatedDatum(filename, flow_x, flow_y, labelname, resize_height,
           resize_width, min_dim, max_dim, is_color, enc, type, label_type,
           name_to_label, &anno_datum);
       anno_datum.set_type(AnnotatedDatum_AnnotationType_BBOX);

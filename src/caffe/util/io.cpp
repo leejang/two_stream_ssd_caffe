@@ -157,13 +157,17 @@ static bool matchExt(const std::string & fn,
 
 bool ReadImageToDatum(const string& filename, const int label,
     const int height, const int width, const int min_dim, const int max_dim,
-    const bool is_color, const std::string & encoding, Datum* datum) {
+    const bool is_color, const std::string & encoding, Datum* datum) 
+{
   cv::Mat cv_img = ReadImageToCVMat(filename, height, width, min_dim, max_dim,
                                     is_color);
-  if (cv_img.data) {
-    if (encoding.size()) {
+  if (cv_img.data) 
+  {
+    if (encoding.size()) 
+    {
       if ( (cv_img.channels() == 3) == is_color && !height && !width &&
-          !min_dim && !max_dim && matchExt(filename, encoding) ) {
+          !min_dim && !max_dim && matchExt(filename, encoding) ) 
+      {
         datum->set_channels(cv_img.channels());
         datum->set_height(cv_img.rows);
         datum->set_width(cv_img.cols);
@@ -173,13 +177,17 @@ bool ReadImageToDatum(const string& filename, const int label,
       datum->set_label(label);
       return true;
     }
+    CHECK_EQ(1,2);
     CVMatToDatum(cv_img, datum);
     datum->set_label(label);
     return true;
-  } else {
+  } 
+  else {
     return false;
   }
 }
+
+
 
 void GetImageSize(const string& filename, int* height, int* width) {
   cv::Mat cv_img = cv::imread(filename);
@@ -190,6 +198,59 @@ void GetImageSize(const string& filename, int* height, int* width) {
   *height = cv_img.rows;
   *width = cv_img.cols;
 }
+
+// ************** NEW *****************
+bool ReadRichImageFlowToAnnotatedDatum(const string& filename, const string& flowname_x, const string& flowname_y,
+    const string& labelfile, const int height, const int width,
+    const int min_dim, const int max_dim, const bool is_color,
+    const string& encoding, const AnnotatedDatum_AnnotationType type,
+    const string& labeltype, const std::map<string, int>& name_to_label,
+    AnnotatedDatum* anno_datum) {
+  // Read image to datum.
+  bool status = ReadImageToDatum(filename, -1, height, width,
+                                 min_dim, max_dim, true, encoding,
+                                 anno_datum->mutable_datum());
+  CHECK_EQ(status, true);
+  
+  status = ReadImageToDatum(flowname_x, -1, height, width,
+                                 min_dim, max_dim, false, encoding,
+                                 anno_datum->mutable_flow_x());
+  CHECK_EQ(status, true);
+
+  status = ReadImageToDatum(flowname_y, -1, height, width,
+                                 min_dim, max_dim, false, encoding,
+                                 anno_datum->mutable_flow_y());
+  CHECK_EQ(status, true);
+  
+  
+  anno_datum->clear_annotation_group();
+  if (!boost::filesystem::exists(labelfile)) {
+    return true;
+  }
+  switch (type) {
+    case AnnotatedDatum_AnnotationType_BBOX:
+      int ori_height, ori_width;
+      GetImageSize(filename, &ori_height, &ori_width);
+      if (labeltype == "xml") {
+        return ReadXMLToAnnotatedDatum(labelfile, ori_height, ori_width,
+                                       name_to_label, anno_datum);
+      } else if (labeltype == "json") {
+        return ReadJSONToAnnotatedDatum(labelfile, ori_height, ori_width,
+                                        name_to_label, anno_datum);
+      } else if (labeltype == "txt") {
+        return ReadTxtToAnnotatedDatum(labelfile, ori_height, ori_width,
+                                       anno_datum);
+      } else {
+        LOG(FATAL) << "Unknown label file type.";
+        return false;
+      }
+      break;
+    default:
+      LOG(FATAL) << "Unknown annotation type.";
+      return false;
+  }
+}
+
 
 bool ReadRichImageToAnnotatedDatum(const string& filename,
     const string& labelfile, const int height, const int width,
@@ -257,7 +318,8 @@ bool ReadFileToDatum(const string& filename, const int label,
 // Parse VOC/ILSVRC detection annotation.
 bool ReadXMLToAnnotatedDatum(const string& labelfile, const int img_height,
     const int img_width, const std::map<string, int>& name_to_label,
-    AnnotatedDatum* anno_datum) {
+    AnnotatedDatum* anno_datum) 
+{
   ptree pt;
   read_xml(labelfile, pt);
 
@@ -360,7 +422,8 @@ bool ReadXMLToAnnotatedDatum(const string& labelfile, const int img_height,
 // Parse MSCOCO detection annotation.
 bool ReadJSONToAnnotatedDatum(const string& labelfile, const int img_height,
     const int img_width, const std::map<string, int>& name_to_label,
-    AnnotatedDatum* anno_datum) {
+    AnnotatedDatum* anno_datum) 
+{
   ptree pt;
   read_json(labelfile, pt);
 
@@ -464,7 +527,8 @@ bool ReadJSONToAnnotatedDatum(const string& labelfile, const int img_height,
 
 // Parse plain txt detection annotation: label_id, xmin, ymin, xmax, ymax.
 bool ReadTxtToAnnotatedDatum(const string& labelfile, const int height,
-    const int width, AnnotatedDatum* anno_datum) {
+    const int width, AnnotatedDatum* anno_datum) 
+{
   std::ifstream infile(labelfile.c_str());
   if (!infile.good()) {
     LOG(INFO) << "Cannot open " << labelfile;
@@ -529,7 +593,8 @@ bool ReadTxtToAnnotatedDatum(const string& labelfile, const int height,
 }
 
 bool ReadLabelFileToLabelMap(const string& filename, bool include_background,
-    const string& delimiter, LabelMap* map) {
+    const string& delimiter, LabelMap* map)
+{
   // cleanup
   map->Clear();
 
@@ -586,7 +651,8 @@ bool ReadLabelFileToLabelMap(const string& filename, bool include_background,
 }
 
 bool MapNameToLabel(const LabelMap& map, const bool strict_check,
-    std::map<string, int>* name_to_label) {
+    std::map<string, int>* name_to_label) 
+{
   // cleanup
   name_to_label->clear();
 
@@ -606,7 +672,8 @@ bool MapNameToLabel(const LabelMap& map, const bool strict_check,
 }
 
 bool MapLabelToName(const LabelMap& map, const bool strict_check,
-    std::map<int, string>* label_to_name) {
+    std::map<int, string>* label_to_name) 
+{
   // cleanup
   label_to_name->clear();
 
@@ -626,7 +693,8 @@ bool MapLabelToName(const LabelMap& map, const bool strict_check,
 }
 
 bool MapLabelToDisplayName(const LabelMap& map, const bool strict_check,
-    std::map<int, string>* label_to_display_name) {
+    std::map<int, string>* label_to_display_name) 
+{
   // cleanup
   label_to_display_name->clear();
 
@@ -694,7 +762,8 @@ bool DecodeDatum(Datum* datum, bool is_color) {
 }
 
 void EncodeCVMatToDatum(const cv::Mat& cv_img, const string& encoding,
-                        Datum* datum) {
+                        Datum* datum) 
+{
   std::vector<uchar> buf;
   cv::imencode("."+encoding, cv_img, buf);
   datum->set_data(std::string(reinterpret_cast<char*>(&buf[0]),

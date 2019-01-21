@@ -186,6 +186,14 @@ bool DecodeDatum(Datum* datum, bool is_color);
 
 void GetImageSize(const string& filename, int* height, int* width);
 
+bool ReadRichImageFlowToAnnotatedDatum(const string& filename, const string& flowname_x, const string& flowname_y,
+    const string& labelfile, const int height, const int width,
+    const int min_dim, const int max_dim, const bool is_color,
+    const string& encoding, const AnnotatedDatum_AnnotationType type,
+    const string& labeltype, const std::map<string, int>& name_to_label,
+    AnnotatedDatum* anno_datum);
+    
+    
 bool ReadRichImageToAnnotatedDatum(const string& filename,
     const string& labelname, const int height, const int width,
     const int min_dim, const int max_dim, const bool is_color,

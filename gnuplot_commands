@@ -1,0 +1,8 @@
+# gnuplot_commands
+set datafile separator ','
+set term x11 0
+plot '7cv_2fc_single_robot_only_log.txt.train' using 1:4  with line,\
+#plot '7cv_2fc_single_log.txt.train' using 1:4  with line,\
+#plot '7cv_2fc_con10_w_robot_log.txt.train' using 1:4  with line,\
+#plot '7cv_2fc_con5_log.txt.train' using 1:4  with line,\
+#plot '7cv_2fc_con10_log.txt.train' using 1:4  with line,\

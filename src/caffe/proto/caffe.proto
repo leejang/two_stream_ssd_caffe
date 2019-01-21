@@ -146,12 +146,15 @@ message AnnotatedDatum {
     BBOX = 0;
   }
   optional Datum datum = 1;
+  optional Datum flow_x = 2;
+  optional Datum flow_y = 3;
   // If there are "rich" annotations, specify the type of annotation.
   // Currently it only supports bounding box.
   // If there are no "rich" annotations, use label in datum instead.
-  optional AnnotationType type = 2;
+  optional AnnotationType type = 4;
   // Each group contains annotation for a particular class.
-  repeated AnnotationGroup annotation_group = 3;
+  repeated AnnotationGroup annotation_group = 5;
+
 }
 
 message FillerParameter {

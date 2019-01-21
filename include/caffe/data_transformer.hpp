@@ -41,6 +41,8 @@ class DataTransformer {
    */
   void Transform(const Datum& datum, Blob<Dtype>* transformed_blob);
 
+  // for image_data_flow_layer.cpp
+  void TransformNorm(const cv::Mat& cv_img, Blob<Dtype>* transformed_blob);
   /**
    * @brief Applies the transformation defined in the data layer's
    * transform_param block to a vector of Datum.
@@ -80,6 +82,23 @@ class DataTransformer {
   void Transform(const AnnotatedDatum& anno_datum,
                  Blob<Dtype>* transformed_blob,
                  vector<AnnotationGroup>* transformed_anno_vec);
+  
+  
+  /*
+    For FlowImage
+  */
+  void TransformFlow(const AnnotatedDatum& anno_datum, 
+    const Datum& datum, Blob<Dtype>* transformed_blob,
+    RepeatedPtrField<AnnotationGroup>* transformed_anno_group_all,
+    bool* do_mirror, bool transformAnn);
+
+  void TransformFlow(const AnnotatedDatum& anno_datum, 
+    Blob<Dtype>* transformed_blob,
+    Blob<Dtype>* transformed_flowx,
+    Blob<Dtype>* transformed_flowy,
+    vector<AnnotationGroup>* transformed_anno_vec);
+
+
 
   /**
    * @brief Transform the annotation according to the transformation applied
@@ -101,6 +120,10 @@ class DataTransformer {
       const NormalizedBBox& crop_bbox, const bool do_mirror,
       RepeatedPtrField<AnnotationGroup>* transformed_anno_group_all);
 
+
+  void CropImageFlow(const AnnotatedDatum& anno_datum, const NormalizedBBox& bbox,
+                    AnnotatedDatum* cropped_anno_datum);
+                                       
   /**
    * @brief Crops the datum according to bbox.
    */
